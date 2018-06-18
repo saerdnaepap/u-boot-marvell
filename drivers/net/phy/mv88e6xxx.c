@@ -153,7 +153,7 @@ static int mv88e6xxx_reg_wait_ready_indirect(struct mv88e6xxx_dev *dev)
 	return -ETIMEDOUT;
 }
 
-static int mv88e6xxx_read_indirect(struct mv88e6xxx_dev *dev, int port, int reg)
+static int mv88e6xxx_read_SMIC22(struct mv88e6xxx_dev *dev, int port, int reg)
 {
 	int ret;
 
@@ -172,7 +172,7 @@ static int mv88e6xxx_read_indirect(struct mv88e6xxx_dev *dev, int port, int reg)
 	return ret;
 }
 
-static int mv88e6xxx_write_indirect(struct mv88e6xxx_dev *dev, int port,
+static int mv88e6xxx_write_SMIC22(struct mv88e6xxx_dev *dev, int port,
 			int reg, unsigned short val)
 {
 	int ret;
@@ -188,6 +188,93 @@ static int mv88e6xxx_write_indirect(struct mv88e6xxx_dev *dev, int port,
 	return mv88e6xxx_reg_wait_ready_indirect(dev);
 }
 
+static int mv88e6xxx_read_SMIC45(struct mv88e6xxx_dev *dev, int port, int smidev, int reg)
+{
+	int ret;
+	/* DATA = RegAddr */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_DATA, reg);
+	if (ret < 0)
+		return ret;
+
+
+	/* CMD = WriteAddress */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_OP,
+		GLOBAL2_SMI_OP_BUSY |
+		GLOBAL2_SMI_OP_CLAUSE_45 |
+		GLOBAL2_SMI_OP_45_WRITE_ADDR |
+		(port << SMI_CMD_DEV_ADDR_SIZE) |
+	        (smidev & SMI_CMD_REG_ADDR_MASK));
+	if (ret < 0)
+		return ret;
+
+	/* wait for busy state */
+	ret = mv88e6xxx_reg_wait_ready_indirect(dev);
+	if (ret < 0)
+		return ret;
+
+	/* CMD = Read */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_OP,
+		GLOBAL2_SMI_OP_BUSY |
+		GLOBAL2_SMI_OP_CLAUSE_45 |
+		GLOBAL2_SMI_OP_45_READ_DATA |
+		(port << SMI_CMD_DEV_ADDR_SIZE) |
+	        (smidev & SMI_CMD_REG_ADDR_MASK));
+	if (ret < 0)
+		return ret;
+
+	/* wait for busy state */
+	ret = mv88e6xxx_reg_wait_ready_indirect(dev);
+	if (ret < 0)
+		return ret;
+
+	/* read data from DATA */
+	ret = mv88e6xxx_read_register(dev, REG_GLOBAL2, GLOBAL2_SMI_DATA);
+
+	return ret;
+}
+
+static int mv88e6xxx_write_SMIC45(struct mv88e6xxx_dev *dev, int port, int smidev,
+			int reg, int val)
+{
+	int ret;
+
+	/* DATA = RegAddr */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_DATA, reg);
+	if (ret < 0)
+		return ret;
+
+	/* CMD = WriteAddress */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_OP,
+		GLOBAL2_SMI_OP_BUSY |
+		GLOBAL2_SMI_OP_CLAUSE_45 |
+		GLOBAL2_SMI_OP_45_WRITE_ADDR |
+		(port << SMI_CMD_DEV_ADDR_SIZE) |
+	        (smidev & SMI_CMD_REG_ADDR_MASK));
+	if (ret < 0)
+		return ret;
+
+	/* wait for busy state */
+	ret = mv88e6xxx_reg_wait_ready_indirect(dev);
+	if (ret < 0)
+		return ret;
+
+	/* DATA = val */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_DATA, val);
+	if (ret < 0)
+		return ret;
+
+	/* CMD = WriteData */
+	ret = mv88e6xxx_write_register(dev, REG_GLOBAL2, GLOBAL2_SMI_OP,
+		GLOBAL2_SMI_OP_BUSY |
+		GLOBAL2_SMI_OP_CLAUSE_45 |
+		GLOBAL2_SMI_OP_45_WRITE_DATA |
+		(port << SMI_CMD_DEV_ADDR_SIZE) |
+	        (smidev & SMI_CMD_REG_ADDR_MASK));
+
+	return ret;
+
+}
+
 int mv88e6xxx_read_phy_register(struct mv88e6xxx_dev *dev, int port, int page,
 			int reg)
 {
@@ -196,14 +283,14 @@ int mv88e6xxx_read_phy_register(struct mv88e6xxx_dev *dev, int port, int page,
 	if (!dev)
 		return -ENODEV;
 
-	ret = mv88e6xxx_write_indirect(dev, port, SMI_PHY_PAGE_REG, page);
+	ret = mv88e6xxx_write_SMIC22(dev, port, SMI_PHY_PAGE_REG, page);
 	if (ret < 0)
 		goto restore_page_0;
 
-	ret = mv88e6xxx_read_indirect(dev, port, reg);
+	ret = mv88e6xxx_read_SMIC22(dev, port, reg);
 
 restore_page_0:
-	mv88e6xxx_write_indirect(dev, port, SMI_PHY_PAGE_REG, 0x0);
+	mv88e6xxx_write_SMIC22(dev, port, SMI_PHY_PAGE_REG, 0x0);
 
 	return ret;
 }
@@ -218,14 +305,14 @@ int mv88e6xxx_write_phy_register(struct mv88e6xxx_dev *dev, int port, int page,
 		return -1;
 	}
 
-	ret = mv88e6xxx_write_indirect(dev, port, SMI_PHY_PAGE_REG, page);
+	ret = mv88e6xxx_write_SMIC22(dev, port, SMI_PHY_PAGE_REG, page);
 	if (ret < 0)
 		goto restore_page_0;
 
-	ret = mv88e6xxx_write_indirect(dev, port, reg, val);
+	ret = mv88e6xxx_write_SMIC22(dev, port, reg, val);
 
 restore_page_0:
-	mv88e6xxx_write_indirect(dev, port, SMI_PHY_PAGE_REG, 0x0);
+	mv88e6xxx_write_SMIC22(dev, port, SMI_PHY_PAGE_REG, 0x0);
 
 	return ret;
 }
@@ -431,6 +518,10 @@ static int sw_resolve_options(char *str)
 		return SW_PHY_READ;
 	else if (strcmp(str, "phy_write") == 0)
 		return SW_PHY_WRITE;
+	else if (strcmp(str, "serdes_read") == 0)
+		return SW_SERDES_READ;
+	else if (strcmp(str, "serdes_write") == 0)
+		return SW_SERDES_WRITE;
 	else if (strcmp(str, "link") == 0)
 		return SW_LINK;
 	else
@@ -440,7 +531,7 @@ static int sw_resolve_options(char *str)
 static int do_sw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct mv88e6xxx_dev *dev;
-	int port, reg, page, val = 0, ret = 0;
+	int port, reg, page, smidev, val = 0, ret = 0;
 
 	dev = soho_dev_handle;
 
@@ -525,6 +616,41 @@ static int do_sw(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			       port, page, reg, val);
 		break;
 
+	case SW_SERDES_READ:
+		if (argc < 5) {
+			printf("Syntax Error: switch serdes_read <smidev> <reg>\n");
+			return 1;
+		}
+		port = (int)simple_strtoul(argv[2], NULL, 16);
+		smidev = (int)simple_strtoul(argv[3], NULL, 16);
+		reg  = (int)simple_strtoul(argv[4], NULL, 16);
+		ret = mv88e6xxx_read_SMIC45(dev, port, smidev, reg);
+		if (ret < 0)
+			printf("Failed: Read - serdes port: 0x%X, smidev: 0x%X, reg: 0x%X\n, ret: %d",
+			       port, smidev, reg, ret);
+		else
+			printf("Read - serdes port: 0x%X, smidev: 0x%X, reg: 0x%X, val: 0x%X\n",
+			       port, smidev, reg, ret);
+		break;
+
+	case SW_SERDES_WRITE:
+		if (argc < 6) {
+			printf("Syntax Error: switch serdes_write <smidev> <reg> <val>\n");
+			return 1;
+		}
+		port = (int)simple_strtoul(argv[2], NULL, 16);
+		smidev = (int)simple_strtoul(argv[3], NULL, 16);
+		reg  = (int)simple_strtoul(argv[4], NULL, 16);
+		val  = (int)simple_strtoul(argv[5], NULL, 16);
+		ret = mv88e6xxx_write_SMIC45(dev, port, smidev, reg, (unsigned short)val);
+		if (ret < 0)
+			printf("Failed: Write - serdes port: 0x%X, smidev: 0x%X, reg: 0x%X, val: 0x%X, ret: %d\n",
+			       port, smidev, reg, val, ret);
+		else
+			printf("Read - serdes port: 0x%X, smidev: 0x%X, reg: 0x%X, val: 0x%X\n",
+			       port, smidev, reg, val);
+		break;
+
 	case SW_LINK:
 		if (argc < 3) {
 			printf("Error: Too few arguments\n");
@@ -553,5 +679,7 @@ U_BOOT_CMD(
 	"switch write <port> <reg> <val> - write <val> to switch register <reg> of a <port>\n"
 	"switch phy_read <port> <page> <reg> - read internal switch phy register <reg> at <page> of a switch <port>\n"
 	"switch phy_write <port> <page> <reg> <val>- write <val> to internal phy register at <page> of a <port>\n"
+	"switch serdes_read <port> <smidev> <reg> - read internal switch SERDES register <reg>\n"
+	"switch serdes_write <port> <smidev> <reg> <val>- write <val> to internal SERDES register\n"
 	"switch link <port> - Display link state and speed of a <port>\n"
 );
