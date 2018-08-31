@@ -100,6 +100,8 @@ struct bubt_dev {
 	int (*active)(void);
 };
 
+static u32 address_offset = 0;
+
 static ulong get_load_addr(void)
 {
 	const char *addr_str;
@@ -271,8 +273,7 @@ static int spi_burn_image(size_t image_size)
 #ifdef CONFIG_SPI_FLASH_PROTECTION
 	spi_flash_protect(flash, 0);
 #endif
-
-	ret = spi_flash_update(flash, 0, image_size, (void *)get_load_addr());
+	ret = spi_flash_update(flash, address_offset, image_size, (void *)get_load_addr());
 	if (ret)
 		printf("Error!\n");
 	else
@@ -808,6 +809,11 @@ int do_bubt_cmd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	else
 		strncpy(src_dev_name, DEFAULT_BUBT_SRC, 8);
 
+	if (argc >= 5)
+		address_offset = (u32)simple_strtoul(argv[4], NULL, 16);
+	else
+		address_offset = 0;
+
 	/* Figure out the destination device */
 	dst = find_bubt_dev(dst_dev_name);
 	if (!dst) {
@@ -828,8 +834,8 @@ int do_bubt_cmd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (!bubt_is_dev_active(src))
 		return -ENODEV;
 
-	printf("Burning U-BOOT image \"%s\" from \"%s\" to \"%s\"\n",
-	       net_boot_file_name, src->name, dst->name);
+	printf("Burning U-BOOT image \"%s\" from \"%s\" to \"%s\" at offset \"0x%x\"\n",
+	       net_boot_file_name, src->name, dst->name, address_offset);
 
 	image_size = bubt_read_file(src);
 	if (!image_size)
@@ -847,12 +853,13 @@ int do_bubt_cmd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	bubt, 4, 0, do_bubt_cmd,
+	bubt, 5, 0, do_bubt_cmd,
 	"Burn a u-boot image to flash",
-	"[file-name] [destination [source]]\n"
+	"[file-name] [destination [source] [address-offset]]\n"
 	"\t-file-name     The image file name to burn. Default = flash-image.bin\n"
 	"\t-destination   Flash to burn to [spi, nand, mmc, spinand]. Default = active boot device\n"
 	"\t-source        The source to load image from [tftp, usb, mmc]. Default = tftp\n"
+	"\t-address-offset Offset in byte where to write to (hex number without prefix)\n"
 	"Examples:\n"
 	"\tbubt - Burn flash-image.bin from tftp to active boot device\n"
 	"\tbubt flash-image-new.bin nand - Burn flash-image-new.bin from tftp to NAND flash\n"

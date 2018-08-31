@@ -93,6 +93,25 @@
 #define MIIM_88E151x_LED1_100_1000_LINK	6
 #define MIIM_88E151x_LED_TIMER_CTRL	18
 #define MIIM_88E151x_INT_EN_OFFS	7
+
+/* 88E1512 PHY defines */
+/* Page 3 registers */
+#define MIIM_88E1512_LED0_100_1000_LINK 7
+#define MIIM_88E1512_LED2_ACT		1
+#define MIIM_88E1512_LED2_OFFS		(2 * MIIM_88E151x_LED_FLD_SZ)
+#define MIIM_88E1512_LED_POL_CTRL	17
+#define MIIM_88E1512_LED0_MIX_OFFS	(2 * MIIM_88E151x_LED_FLD_SZ)
+#define MIIM_88E1512_LED1_MIX_OFFS	(3 * MIIM_88E151x_LED_FLD_SZ)
+#define MIIM_88E1512_LED2_POL_OFFS	(1 * MIIM_88E151x_LED_FLD_SZ)
+#define MIIM_88E1512_LED1_0_POL_OFFS	(0 * MIIM_88E151x_LED_FLD_SZ)
+#define MIIM_88E1512_LED0_MIX		0
+#define MIIM_88E1512_LED1_MIX		0
+#define MIIM_88E1512_LED2_POL		2
+#define MIIM_88E1512_LED1_0_POL		10
+
+
+
+
 /* Page 18 registers */
 #define MIIM_88E151x_GENERAL_CTRL	20
 #define MIIM_88E151x_MODE_SGMII		1
@@ -193,7 +212,6 @@ static int m88e1xxx_parse_status(struct phy_device *phydev)
 static int m88e1011s_startup(struct phy_device *phydev)
 {
 	int ret;
-
 	ret = genphy_update_link(phydev);
 	if (ret)
 		return ret;
@@ -374,6 +392,56 @@ static int m88e1510_config(struct phy_device *phydev)
 
 	return m88e1518_config(phydev);
 }
+
+/* Marvell 88E1512 */
+static int m88e1512_config(struct phy_device *phydev)
+{
+	/* Select page 3 */
+	phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE,
+		  MIIM_88E1118_PHY_LED_PAGE);
+
+	/* Configure LEDs */
+	/* LED[0]:0111 (LINK 100/1000 Mbps) */
+	m88e1518_phy_writebits(phydev, MIIM_88E151x_LED_FUNC_CTRL,
+			       MIIM_88E151x_LED0_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED0_100_1000_LINK);
+	/* LED[1]:0110 (LINK 100/1000 Mbps) */
+	m88e1518_phy_writebits(phydev, MIIM_88E151x_LED_FUNC_CTRL,
+			       MIIM_88E151x_LED1_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E151x_LED1_100_1000_LINK);
+
+	/* LED[2]:0001 (Activity) */
+	m88e1518_phy_writebits(phydev, MIIM_88E151x_LED_FUNC_CTRL,
+			       MIIM_88E1512_LED2_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED2_ACT);
+
+	/* Polarity Control Register */
+	/* LED[0]: mix percentage */
+	m88e1518_phy_writebits(phydev, MIIM_88E1512_LED_POL_CTRL,
+			       MIIM_88E1512_LED0_MIX_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED0_MIX);
+
+	/* LED[1]: mix percentage */
+	m88e1518_phy_writebits(phydev, MIIM_88E1512_LED_POL_CTRL,
+			       MIIM_88E1512_LED1_MIX_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED1_MIX);
+
+	/* LED[2]: polarity */
+	m88e1518_phy_writebits(phydev, MIIM_88E1512_LED_POL_CTRL,
+			       MIIM_88E1512_LED2_POL_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED2_POL);
+
+	/* LED[1]: polarity LED[0]: polarity */
+	m88e1518_phy_writebits(phydev, MIIM_88E1512_LED_POL_CTRL,
+			       MIIM_88E1512_LED1_0_POL_OFFS, MIIM_88E151x_LED_FLD_SZ,
+			       MIIM_88E1512_LED1_0_POL);
+
+	/* Reset page selection */
+	phy_write(phydev, MDIO_DEVAD_NONE, MIIM_88E1118_PHY_PAGE, 0);
+
+	return m88e1518_config(phydev);
+}
+
 
 /* Marvell 88E1118 */
 static int m88e1118_config(struct phy_device *phydev)
@@ -829,7 +897,7 @@ static struct phy_driver M88E1518_driver = {
 	.uid = 0x1410dd0,
 	.mask = 0xffffffa,
 	.features = PHY_GBIT_FEATURES,
-	.config = &m88e1518_config,
+	.config = &m88e1512_config,
 	.startup = &m88e1011s_startup,
 	.shutdown = &genphy_shutdown,
 };

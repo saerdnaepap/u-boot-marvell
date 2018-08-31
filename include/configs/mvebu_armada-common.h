@@ -26,6 +26,17 @@
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, \
 					  115200, 230400, 460800, 921600 }
 
+/*
+#ifndef UUID_DISK_HFS
+#define UUID_DISK_HFS "00000000-0000-0000-0000-000000000001"
+#warning "NO UUID for UUID_DISK_HFS defined - using default"
+#endif
+#ifndef UUID_PART_HFS
+#define UUID_PART_HFS "00000000-0000-0000-0000-000000000001"
+#warning "NO UUID for UUID_PART_HFS defined - using default"
+#endif
+*/
+
 /* Default Env vars */
 #define CONFIG_IPADDR			0.0.0.0	/* In order to cause an error */
 #define CONFIG_SERVERIP			0.0.0.0	/* In order to cause an error */

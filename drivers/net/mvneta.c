@@ -29,6 +29,7 @@
 #include <linux/compat.h>
 #include <linux/mbus.h>
 
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #if !defined(CONFIG_PHYLIB)
@@ -1533,6 +1534,13 @@ static int mvneta_start(struct udevice *dev)
 	struct phy_device *phydev;
 
 	mvneta_port_power_up(pp, pp->phy_interface);
+
+#ifdef CONFIG_TARGET_MGUARD3
+	/* inactive nETH_RESET */
+	u32 regval = readl(MVEBU_GPIO_SB_PIN_OUTPUT);
+	writel(regval | 0x1, MVEBU_GPIO_SB_PIN_OUTPUT);
+	udelay(200);
+#endif
 
 	if (!pp->init || pp->link == 0) {
 		if (mvneta_port_is_fixed_link(pp)) {

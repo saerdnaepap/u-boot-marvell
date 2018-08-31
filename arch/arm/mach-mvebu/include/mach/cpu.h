@@ -15,6 +15,12 @@
 
 #define MVEBU_REG_PCIE_DEVID		(MVEBU_REG_PCIE_BASE + 0x00)
 #define MVEBU_REG_PCIE_REVID		(MVEBU_REG_PCIE_BASE + 0x08)
+#define CONFIG_TARGET_MGUARD3		/* To be removed if TARGET_MGUARD3 is defined */
+#ifdef CONFIG_TARGET_MGUARD3
+/* Armada 3700 */
+#define MVEBU_GPIO_SB_REG_BASE		(MVEBU_REGISTER(0x18800))
+#define MVEBU_GPIO_SB_PIN_OUTPUT        (MVEBU_GPIO_SB_REG_BASE + 0x18)
+#endif
 
 enum memory_bank {
 	BANK0,

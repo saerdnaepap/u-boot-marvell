@@ -24,6 +24,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MVEBU_NB_WARM_RST_REG		(MVEBU_GPIO_NB_REG_BASE + 0x40)
 #define MVEBU_NB_WARM_RST_MAGIC_NUM	0x1d1e
 
+#define MVEBU_GPIO_SB_OUTPUT_ENABLE    (MVEBU_GPIO_SB_REG_BASE + 0x0)
+
 static struct mm_region mvebu_mem_map[] = {
 	{
 		/* RAM */
@@ -82,6 +84,26 @@ u32 get_ref_clk(void)
 		return 25;
 	else
 		return 40;
+}
+
+int mach_cpu_init(void) {
+	printf("Apply SD-Card Voltage\n");
+	u32 regval = readl(MVEBU_GPIO_NB_REG_BASE);
+	writel(regval | 0x4, MVEBU_GPIO_NB_REG_BASE);
+#ifdef CONFIG_TARGET_MGUARD3
+	/* inactive nETH_RESET */
+	regval = readl(MVEBU_GPIO_SB_PIN_OUTPUT);
+	writel(regval | 0x1, MVEBU_GPIO_SB_PIN_OUTPUT);
+
+	/* nETH_RESET = GPIO output */
+	regval = readl(MVEBU_GPIO_SB_OUTPUT_ENABLE);
+	writel(regval | 0x1, MVEBU_GPIO_SB_OUTPUT_ENABLE);
+
+	/* hold switch and phy in RESET */
+	regval = readl(MVEBU_GPIO_SB_PIN_OUTPUT);
+	writel(regval & 0xFFFE, MVEBU_GPIO_SB_PIN_OUTPUT);
+#endif
+	return 0;
 }
 
 #if defined(CONFIG_DISPLAY_CPUINFO)

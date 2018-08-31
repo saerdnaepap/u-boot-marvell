@@ -54,14 +54,10 @@
 	};
 
 	phy1 {
-		phy-type = <COMPHY_TYPE_USB3>;
-		phy-speed = <COMPHY_SPEED_5G>;
+		phy-type = <COMPHY_TYPE_PEX0>;
+		phy-speed = <COMPHY_SPEED_2_5G>;
 	};
 
-	phy2 {
-		phy-type = <COMPHY_TYPE_SATA0>;
-		phy-speed = <COMPHY_SPEED_6G>;
-	};
 };
 
 &eth0 {
@@ -72,8 +68,11 @@
 	phy = <&ethphy0>;
 };
 
+/* 88E6341 Switch connected via GbE1/comphy lane0/neta@40000, SGMII, 2.5Gbps, Switch Port 5, MDIO PHY addr. = 0x4 */
+
 &eth1 {
 	status = "okay";
+	pinctrl-names = "default";
 	phy-mode = "sgmii";
 	phy = <&mvswitch>;
 	fixed-link {
@@ -109,7 +108,7 @@
 };
 
 &scsi {
-	status = "okay";
+	status = "disabled";
 };
 
 /* CON3 */
