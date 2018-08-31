@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <dm.h>
 #include <ahci.h>
 #include <linux/mbus.h>
 #include <asm/io.h>
@@ -12,6 +13,11 @@
 #include <asm/arch/cpu.h>
 #include <asm/arch/soc.h>
 #include <sdhci.h>
+
+#if defined(CONFIG_MVEBU_EFUSE)
+#include <mvebu/fuse-mvebu-priv.h>
+#include <fuse-mvebu.h>
+#endif
 
 #define DDR_BASE_CS_OFF(n)	(0x0000 + ((n) << 3))
 #define DDR_SIZE_CS_OFF(n)	(0x0004 + ((n) << 3))
@@ -446,6 +452,15 @@ int arch_cpu_init(void)
 	/* Disable MBUS error propagation */
 	clrsetbits_le32(SOC_COHERENCY_FABRIC_CTRL_REG, MBUS_ERR_PROP_EN, 0);
 
+#if defined(CONFIG_MVEBU_EFUSE)
+	if (mvebu_soc_family() == MVEBU_SOC_A38X) {
+		struct fuse_ops a38x_ops;
+		a38x_ops.fuse_init = mvebu_efuse_init_hw;
+		a38x_ops.fuse_hd_read = NULL;
+		a38x_ops.fuse_hd_prog = NULL;
+		reg_fuse_ops(&a38x_ops);
+	}
+#endif
 	return 0;
 }
 #endif /* CONFIG_ARCH_CPU_INIT */
@@ -464,6 +479,10 @@ u32 mvebu_get_nand_clock(void)
 		  NAND_ECC_DIVCKL_RATIO_MASK) >> NAND_ECC_DIVCKL_RATIO_OFFS);
 }
 
+void mvebu_nand_select(void)
+{
+	return;
+}
 /*
  * SOC specific misc init
  */
@@ -584,4 +603,24 @@ void v7_outer_cache_disable(void)
 		(struct pl310_regs *)CONFIG_SYS_PL310_BASE;
 
 	clrbits_le32(&pl310->pl310_ctrl, L2X0_CTRL_EN);
+}
+
+int arch_early_init_r(void)
+{
+	struct udevice *dev;
+	int ret;
+	int i;
+
+	/* Loop over all MISC uclass drivers */
+	i = 0;
+	while (1) {
+		/* Call relevant driver code via the MISC uclass driver */
+		ret = uclass_get_device(UCLASS_MISC, i++, &dev);
+
+		/* We're done, once no further MISC device node is found */
+		if (ret)
+			break;
+	}
+
+	return 0;
 }

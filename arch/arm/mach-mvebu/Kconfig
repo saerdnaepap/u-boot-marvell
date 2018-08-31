@@ -1,9 +1,5 @@
 if ARCH_MVEBU
 
-config HAVE_MVEBU_EFUSE
-	bool
-	default n
-
 config ARMADA_32BIT
 	bool
 	select CPU_V7
@@ -15,10 +11,6 @@ config ARMADA_32BIT
 	select BOARD_EARLY_INIT_F
 	select ARCH_MISC_INIT
 
-config ARMADA_64BIT
-	bool
-	select ARM64
-
 # ARMv7 SoCs...
 config ARMADA_375
 	bool
@@ -27,7 +19,6 @@ config ARMADA_375
 config ARMADA_38X
 	bool
 	select ARMADA_32BIT
-	select HAVE_MVEBU_EFUSE
 
 config ARMADA_XP
 	bool
@@ -42,11 +33,29 @@ config ARMADA_3700
 config ARMADA_8K
 	bool
 	select ARM64
+	select ARMADA_AP806
+	select ARMADA_CP110
+
+# Armada 8k plus
+config ARMADA_8K_PLUS
+	bool
+	select ARM64
+	select ARMADA_AP810
+	select ARMADA_CP110
+
+config ARMADA_AP806
+	bool
+
+config ARMADA_AP810
+	bool
+
+config ARMADA_CP110
+	bool
 
 # Armada PLL frequency (used for NAND clock generation)
 config SYS_MVEBU_PLL_CLOCK
 	int
-	default "2000000000" if ARMADA_XP || ARMADA_3700 || ARMADA_8K
+	default "2000000000" if ARMADA_XP || ARMADA_3700 || ARMADA_8K || ARMADA_8K_PLUS
 	default "1000000000" if ARMADA_38X || ARMADA_375
 
 # Armada XP/38x SoC types...
@@ -67,7 +76,7 @@ config 88F6820
 	select ARMADA_38X
 
 choice
-	prompt "Armada XP/375/38x/3700/7K/8K board select"
+	prompt "Armada XP/375/38x/3700/7K/8K/8KP board select"
 	optional
 
 config TARGET_CLEARFOG
@@ -93,6 +102,11 @@ config TARGET_DB_88F6820_AMC
 config TARGET_MVEBU_ARMADA_8K
 	bool "Support Armada 7k/8k platforms"
 	select ARMADA_8K
+	select BOARD_LATE_INIT
+
+config TARGET_MVEBU_ARMADA_8K_PLUS
+	bool "Support Armada 8k Plus platforms"
+	select ARMADA_8K_PLUS
 	select BOARD_LATE_INIT
 
 config TARGET_DB_MV784MP_GP
@@ -121,6 +135,7 @@ config SYS_BOARD
 	default "db-88f6820-gp" if TARGET_DB_88F6820_GP
 	default "db-88f6820-amc" if TARGET_DB_88F6820_AMC
 	default "mvebu_armada-8k" if TARGET_MVEBU_ARMADA_8K
+	default "mvebu_armada-8k-plus" if TARGET_MVEBU_ARMADA_8K_PLUS
 	default "db-mv784mp-gp" if TARGET_DB_MV784MP_GP
 	default "ds414" if TARGET_DS414
 	default "maxbcm" if TARGET_MAXBCM
@@ -133,6 +148,7 @@ config SYS_CONFIG_NAME
 	default "db-88f6820-gp" if TARGET_DB_88F6820_GP
 	default "db-88f6820-amc" if TARGET_DB_88F6820_AMC
 	default "mvebu_armada-8k" if TARGET_MVEBU_ARMADA_8K
+	default "mvebu_armada-8k-plus" if TARGET_MVEBU_ARMADA_8K_PLUS
 	default "db-mv784mp-gp" if TARGET_DB_MV784MP_GP
 	default "ds414" if TARGET_DS414
 	default "maxbcm" if TARGET_MAXBCM
@@ -145,28 +161,25 @@ config SYS_VENDOR
 	default "Marvell" if TARGET_DB_88F6820_GP
 	default "Marvell" if TARGET_DB_88F6820_AMC
 	default "Marvell" if TARGET_MVEBU_ARMADA_8K
+	default "Marvell" if TARGET_MVEBU_ARMADA_8K_PLUS
 	default "solidrun" if TARGET_CLEARFOG
 	default "Synology" if TARGET_DS414
 
 config SYS_SOC
 	default "mvebu"
 
-config MVEBU_EFUSE
-	bool "Enable eFuse support"
-	default n
-	depends on HAVE_MVEBU_EFUSE
-	help
-	  Enable support for reading and writing eFuses on mvebu SoCs.
+menu "MVEBU Common SoC Utilities"
+	depends on ARCH_MVEBU
 
-config MVEBU_EFUSE_FAKE
-	bool "Fake eFuse access (dry run)"
-	default n
-	depends on MVEBU_EFUSE
+config MVEBU_PALLADIUM
+	bool "Build image for Palladium emulation platform"
+	default false
+	depends on TARGET_MVEBU_ARMADA_8K_PLUS || TARGET_MVEBU_ARMADA_8K
 	help
-	  This enables a "dry run" mode where eFuses are not really programmed.
-	  Instead the eFuse accesses are emulated by writing to and reading
-	  from a memory block.
-	  This is can be used for testing prog scripts.
+	  Build an image for Palladium emulation
+	  platform with different clock or
+	  address configuration.
+	  Supported for Armada-8k-plus and Armada-8k
 
 config SECURED_MODE_IMAGE
 	bool "Build image for trusted boot"
@@ -191,6 +204,24 @@ config MVEBU_SYS_INFO
 	  from spl to u-boot, you need to choose
 	  this option.
 
-source "arch/arm/mach-mvebu/armada3700/Kconfig"
+config MVEBU_EFUSE_SUPPORT
+	bool "eFuse support"
+	depends on TARGET_MVEBU_ARMADA_37XX
+	default n
+	help
+	  Choose this option to add support
+	  for eFuse access driver and enable
+	  mailbox for eFuse read/write actions
 
+config ENV_IS_IN_BOOTDEV
+	bool "Boot-time Environment Selection"
+	depends on MVEBU_SPI_BOOT || MVEBU_NAND_BOOT
+	help
+	  Choose this option to add support
+	  for boot-time environment selection.
+	  the boot-time environment is decided
+	  according to the boot source value
+	  in sample at reset.
+
+endmenu
 endif

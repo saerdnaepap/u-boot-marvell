@@ -222,6 +222,11 @@ static int on_ethaddr(const char *name, const char *value, enum env_op op,
 
 	retval = uclass_find_device_by_seq(UCLASS_ETH, index, false, &dev);
 	if (!retval) {
+		/* Check if the device has a MAC address in ROM,
+		 * If yes, then stick to it all the time.
+		 */
+		if (eth_get_ops(dev)->read_rom_hwaddr)
+			return 0;
 		struct eth_pdata *pdata = dev->platdata;
 		switch (op) {
 		case env_op_create:
@@ -504,10 +509,13 @@ static int eth_post_probe(struct udevice *dev)
 			       pdata->enetaddr);
 			printf("Address in environment is  %pM\n",
 			       env_enetaddr);
+			/* Override the env with ROM MAC address */
+			eth_setenv_enetaddr_by_index("eth", dev->seq,
+						     pdata->enetaddr);
+		} else {
+			/* eth device takes the mac address from env */
+			memcpy(pdata->enetaddr, env_enetaddr, ARP_HLEN);
 		}
-
-		/* Override the ROM MAC address */
-		memcpy(pdata->enetaddr, env_enetaddr, ARP_HLEN);
 	} else if (is_valid_ethaddr(pdata->enetaddr)) {
 		eth_setenv_enetaddr_by_index("eth", dev->seq, pdata->enetaddr);
 		printf("\nWarning: %s using MAC address from ROM\n",

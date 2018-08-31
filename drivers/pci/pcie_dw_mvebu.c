@@ -110,6 +110,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PCIE_TPH_REQ_NEXT_PTR_OFFSET	20
 
 #define PCIE_GEN3_EQ_CONTROL_OFF_REG	0x8a8
+#define PCIE_GEN3_EQ_FB_MODE_MASK	0xf
+#define PCIE_GEN3_EQ_FB_MODE_OFFSET	0x0
 #define PCIE_GEN3_EQ_PSET_REQ_VEC_MASK	0xffff00
 #define PCIE_GEN3_EQ_PSET_REQ_VEC_OFFSET 8
 
@@ -133,6 +135,10 @@ struct pcie_dw_mvebu {
 	void *cfg_base;
 	fdt_size_t cfg_size;
 	int first_busno;
+
+	/* IO and MEM PCI regions */
+	struct pci_region io;
+	struct pci_region mem;
 };
 
 static int pcie_dw_get_link_speed(const void *regs_base)
@@ -145,6 +151,34 @@ static int pcie_dw_get_link_width(const void *regs_base)
 {
 	return (readl(regs_base + PCIE_LINK_STATUS_REG) &
 		PCIE_LINK_STATUS_WIDTH_MASK) >> PCIE_LINK_STATUS_WIDTH_OFF;
+}
+
+/**
+ * pcie_dw_prog_outbound_atu() - Configure ATU for outbound accesses
+ *
+ * @pcie: Pointer to the PCI controller state
+ * @index: ATU region index
+ * @type: ATU accsess type
+ * @cpu_addr: the physical address for the translation entry
+ * @pci_addr: the pcie bus address for the translation entry
+ * @size: the size of the translation entry
+ */
+static void pcie_dw_prog_outbound_atu(struct pcie_dw_mvebu *pcie, int index,
+				      int type, u64 cpu_addr, u64 pci_addr,
+				      u32 size)
+{
+	writel(PCIE_ATU_REGION_OUTBOUND | index,
+	       pcie->ctrl_base + PCIE_ATU_VIEWPORT);
+	writel(lower_32_bits(cpu_addr), pcie->ctrl_base + PCIE_ATU_LOWER_BASE);
+	writel(upper_32_bits(cpu_addr), pcie->ctrl_base + PCIE_ATU_UPPER_BASE);
+	writel(lower_32_bits(cpu_addr + size - 1),
+	       pcie->ctrl_base + PCIE_ATU_LIMIT);
+	writel(lower_32_bits(pci_addr),
+	       pcie->ctrl_base + PCIE_ATU_LOWER_TARGET);
+	writel(upper_32_bits(pci_addr),
+	       pcie->ctrl_base + PCIE_ATU_UPPER_TARGET);
+	writel(type, pcie->ctrl_base + PCIE_ATU_CR1);
+	writel(PCIE_ATU_ENABLE, pcie->ctrl_base + PCIE_ATU_CR2);
 }
 
 /**
@@ -165,26 +199,29 @@ static uintptr_t set_cfg_address(struct pcie_dw_mvebu *pcie,
 				 pci_dev_t d, uint where)
 {
 	uintptr_t va_address;
+	u32 atu_type;
 
 	/*
 	 * Region #0 is used for Outbound CFG space access.
 	 * Direction = Outbound
 	 * Region Index = 0
 	 */
-	writel(0, pcie->ctrl_base + PCIE_ATU_VIEWPORT);
 
 	if (PCI_BUS(d) == (pcie->first_busno + 1))
 		/* For local bus, change TLP Type field to 4. */
-		writel(PCIE_ATU_TYPE_CFG0, pcie->ctrl_base + PCIE_ATU_CR1);
+		atu_type = PCIE_ATU_TYPE_CFG0;
 	else
 		/* Otherwise, change TLP Type field to 5. */
-		writel(PCIE_ATU_TYPE_CFG1, pcie->ctrl_base + PCIE_ATU_CR1);
+		atu_type = PCIE_ATU_TYPE_CFG1;
 
 	if (PCI_BUS(d) == pcie->first_busno) {
 		/* Accessing root port configuration space. */
 		va_address = (uintptr_t)pcie->ctrl_base;
 	} else {
-		writel(d << 8, pcie->ctrl_base + PCIE_ATU_LOWER_TARGET);
+		d = PCI_MASK_BUS(d) | (PCI_BUS(d) - pcie->first_busno);
+		pcie_dw_prog_outbound_atu(pcie, PCIE_ATU_REGION_INDEX0,
+					  atu_type, (u64)pcie->cfg_base,
+					  d << 8, pcie->cfg_size);
 		va_address = (uintptr_t)pcie->cfg_base;
 	}
 
@@ -252,6 +289,10 @@ static int pcie_dw_mvebu_read_config(struct udevice *bus, pci_dev_t bdf,
 	debug("(addr,val)=(0x%04x, 0x%08lx)\n", offset, value);
 	*valuep = pci_conv_32_to_size(value, offset, size);
 
+	pcie_dw_prog_outbound_atu(pcie, PCIE_ATU_REGION_INDEX0,
+				  PCIE_ATU_TYPE_IO, pcie->io.phys_start,
+				  pcie->io.bus_start, pcie->io.size);
+
 	return 0;
 }
 
@@ -292,6 +333,10 @@ static int pcie_dw_mvebu_write_config(struct udevice *bus, pci_dev_t bdf,
 	old = readl(va_address);
 	value = pci_conv_size_to_32(old, value, offset, size);
 	writel(value, va_address);
+
+	pcie_dw_prog_outbound_atu(pcie, PCIE_ATU_REGION_INDEX0,
+				  PCIE_ATU_TYPE_IO, pcie->io.phys_start,
+				  pcie->io.bus_start, pcie->io.size);
 
 	return 0;
 }
@@ -397,13 +442,15 @@ static void pcie_dw_mvebu_pcie_config(const void *regs_base)
 	writel(reg, regs_base + PCIE_LINK_FLUSH_CONTROL_OFF_REG);
 
 	/*
-	 * According to the electrical measurmentrs, the best preset that our
-	 * receiver can handle is preset4, so we are changing the vector of
-	 * presets to evaluate during the link equalization training to preset4.
+	 * According to the electrical measurmentrs, the best presets for our
+	 * receiver are preset3 to preset8, so we are changing the vector of
+	 * presets to evaluate during the link equalization training preset3-8.
 	 */
 	reg = readl(regs_base + PCIE_GEN3_EQ_CONTROL_OFF_REG);
 	reg &= ~PCIE_GEN3_EQ_PSET_REQ_VEC_MASK;
-	reg |= 0x10 << PCIE_GEN3_EQ_PSET_REQ_VEC_OFFSET;
+	reg |= 0x3f0 << PCIE_GEN3_EQ_PSET_REQ_VEC_OFFSET;
+	reg &= ~PCIE_GEN3_EQ_FB_MODE_MASK;
+	reg |= 0x1 << PCIE_GEN3_EQ_FB_MODE_OFFSET;
 	writel(reg, regs_base + PCIE_GEN3_EQ_CONTROL_OFF_REG);
 
 	/*
@@ -486,34 +533,6 @@ static int pcie_dw_mvebu_pcie_link_up(const void *regs_base, u32 cap_speed)
 }
 
 /**
- * pcie_dw_regions_setup() - iATU region setup
- *
- * @pcie: Pointer to the PCI controller state
- *
- * Configure the iATU regions in the PCIe controller for outbound access.
- */
-static void pcie_dw_regions_setup(struct pcie_dw_mvebu *pcie)
-{
-	/*
-	 * Region #0 is used for Outbound CFG space access.
-	 * Direction = Outbound
-	 * Region Index = 0
-	 */
-	writel(0, pcie->ctrl_base + PCIE_ATU_VIEWPORT);
-
-	writel((u32)(uintptr_t)pcie->cfg_base, pcie->ctrl_base
-	       + PCIE_ATU_LOWER_BASE);
-	writel(0, pcie->ctrl_base + PCIE_ATU_UPPER_BASE);
-	writel((u32)(uintptr_t)pcie->cfg_base + pcie->cfg_size,
-	       pcie->ctrl_base + PCIE_ATU_LIMIT);
-
-	writel(0, pcie->ctrl_base + PCIE_ATU_LOWER_TARGET);
-	writel(0, pcie->ctrl_base + PCIE_ATU_UPPER_TARGET);
-	writel(PCIE_ATU_TYPE_CFG0, pcie->ctrl_base + PCIE_ATU_CR1);
-	writel(PCIE_ATU_ENABLE, pcie->ctrl_base + PCIE_ATU_CR2);
-}
-
-/**
  * pcie_dw_set_host_bars() - Configure the host BARs
  *
  * @regs_base: A pointer to the PCIe controller registers
@@ -593,7 +612,18 @@ static int pcie_dw_mvebu_probe(struct udevice *dev)
 		       hose->first_busno);
 	}
 
-	pcie_dw_regions_setup(pcie);
+	/* Store the IO and MEM windows settings for future use by the ATU */
+	pcie->io.phys_start = hose->regions[0].phys_start; /* IO base */
+	pcie->io.bus_start  = hose->regions[0].bus_start;  /* IO_bus_addr */
+	pcie->io.size	    = hose->regions[0].size;	   /* IO size */
+
+	pcie->mem.phys_start = hose->regions[1].phys_start; /* MEM base */
+	pcie->mem.bus_start  = hose->regions[1].bus_start;  /* MEM_bus_addr */
+	pcie->mem.size	     = hose->regions[1].size;	    /* MEM size */
+
+	pcie_dw_prog_outbound_atu(pcie, PCIE_ATU_REGION_INDEX1,
+				  PCIE_ATU_TYPE_MEM, pcie->mem.phys_start,
+				  pcie->mem.bus_start, pcie->mem.size);
 
 	/* Set the CLASS_REV of RC CFG header to PCI_CLASS_BRIDGE_PCI */
 	clrsetbits_le32(pcie->ctrl_base + PCI_CLASS_REVISION,

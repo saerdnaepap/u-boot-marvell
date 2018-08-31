@@ -85,6 +85,10 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
 	armada-388-clearfog.dtb			\
 	armada-388-gp.dtb			\
 	armada-385-amc.dtb			\
+	armada-3900-axis.dtb			\
+	armada-3900-axisbt.dtb			\
+	armada-3900-vd.dtb			\
+	armada-3900-vd-nand.dtb			\
 	armada-7020-amc.dtb			\
 	armada-7040-db.dtb			\
 	armada-7040-db-B.dtb			\
@@ -94,6 +98,7 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
 	armada-7040-pcac.dtb	                \
 	armada-7040-db-nand.dtb			\
 	armada-8040-db.dtb			\
+	armada-8040-pd.dtb			\
 	armada-8040-db-B.dtb			\
 	armada-8040-db-C.dtb			\
 	armada-8040-db-D.dtb			\
@@ -104,7 +109,13 @@ dtb-$(CONFIG_ARCH_MVEBU) +=			\
 	armada-xp-maxbcm.dtb			\
 	armada-xp-synology-ds414.dtb		\
 	armada-xp-theadorable.dtb		\
-	armada-8040-ocp.dtb
+	armada-8040-ocp.dtb			\
+	armada-8080-pd.dtb			\
+	armada-8082-db.dtb			\
+	armada-8084-db.dtb			\
+	armada-8160-pd.dtb			\
+	armada-8162-db.dtb			\
+	armada-8164-db.dtb
 
 dtb-$(CONFIG_ARCH_UNIPHIER_LD11) += \
 	uniphier-ld11-ref.dtb

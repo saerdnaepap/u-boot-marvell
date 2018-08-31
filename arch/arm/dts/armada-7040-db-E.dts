@@ -48,7 +48,7 @@
 #include "armada-70x0-db.dtsi"
 
 / {
-	model = "Marvell Armada 7040 DB (E) board";
+	model = "Marvell Armada 7040 Development Board DB-88FA7040 setup(E)";
 	compatible = "marvell,armada7040-db", "marvell,armada7040",
 		     "marvell,armada-ap806-quad", "marvell,armada-ap806";
 
@@ -59,6 +59,11 @@
 	aliases {
 		i2c0 = &ap_i2c0;
 		spi0 = &ap_spi0;
+		fuse0 = &ap_hd_efuse0;
+		fuse1 = &ap_ld_efuse0;
+		fuse2 = &ap_ld_efuse1;
+		fuse3 = &cp0_ld_efuse0;
+		fuse4 = &cp0_ld_efuse1;
 	};
 
 	memory@00000000 {
@@ -90,26 +95,38 @@
 	status = "okay";
 };
 
-&cpm_pcie0 {
+&ap_hd_efuse0 {
 	status = "okay";
 };
 
-&cpm_pcie2 {
+&ap_ld_efuse0 {
 	status = "okay";
 };
 
-&cpm_i2c0 {
+&ap_ld_efuse1 {
+	status = "okay";
+};
+
+&cp0_pcie0 {
+	status = "okay";
+};
+
+&cp0_pcie2 {
+	status = "okay";
+};
+
+&cp0_i2c0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cpm_i2c0_pins>;
+	pinctrl-0 = <&cp0_i2c0_pins>;
 	status = "okay";
 	clock-frequency = <100000>;
 };
 
-&cpm_i2c1 {
+&cp0_i2c1 {
 	status = "okay";
 };
 
-&cpm_pinctl {
+&cp0_pinctl {
 		/* MPP Bus:
 		 * RGMII0 [0-11]
 		 * SPI1   [13-16]
@@ -133,17 +150,22 @@
 		     0xE 0xE 0>;
 };
 
-&cpm_spi1 {
+&cp0_spi1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cpm_spi0_pins>;
+	pinctrl-0 = <&cp0_spi0_pins>;
+	reg = <0x700680 0x50>,		/* control */
+	      <0x2000000 0x1000000>,	/* CS0 */
+	      <0 0xffffffff>,		/* CS1 */
+	      <0 0xffffffff>,		/* CS2 */
+	      <0 0xffffffff>;		/* CS3 */
 	status = "okay";
 
 	spi-flash@0 {
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
-		compatible = "jedec,spi-nor";
+		compatible = "jedec,spi-nor", "spi-flash";
 		reg = <0x0>;
-		spi-max-frequency = <20000000>;
+		spi-max-frequency = <108000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -163,23 +185,31 @@
 	};
 };
 
-&cpm_sata0 {
+&cp0_ld_efuse0 {
 	status = "okay";
 };
 
-&cpm_scsi {
+&cp0_ld_efuse1 {
 	status = "okay";
 };
 
-&cpm_usb3_0 {
+&cp0_sata0 {
 	status = "okay";
 };
 
-&cpm_usb3_1 {
+&cp0_scsi {
 	status = "okay";
 };
 
-&cpm_comphy {
+&cp0_usb3_0 {
+	status = "okay";
+};
+
+&cp0_usb3_1 {
+	status = "okay";
+};
+
+&cp0_comphy {
 	phy0 {
 		phy-type = <COMPHY_TYPE_PEX0>;
 		phy-speed = <COMPHY_SPEED_5G>;
@@ -207,37 +237,38 @@
 	};
 };
 
-&cpm_utmi0 {
+&cp0_utmi0 {
 	status = "okay";
 };
 
-&cpm_utmi1 {
+&cp0_utmi1 {
 	status = "okay";
 };
 
-&cpm_sdhci0 {
+&cp0_sdhci0 {
 	status = "okay";
 	bus-width = <4>;
 	no-1-8-v;
 	non-removable;
 };
 
-&cpm_mdio {
+&cp0_mdio {
+	status = "okay";
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 	};
 };
 
-&cpm_ethernet {
+&cp0_ethernet {
 	status = "okay";
 };
 
-&cpm_eth0 {
+&cp0_eth0 {
 	status = "okay";
 	phy-mode = "sgmii"; /* lane-2 */
 };
 
-&cpm_eth1 {
+&cp0_eth1 {
 	status = "okay";
 	phy = <&phy0>;
 	phy-mode = "rgmii-id"; /* lane-0 */

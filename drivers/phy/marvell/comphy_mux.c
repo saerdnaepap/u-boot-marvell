@@ -7,8 +7,7 @@
 #include <common.h>
 #include <asm/io.h>
 
-#include "comphy.h"
-#include "comphy_hpipe.h"
+#include "comphy_priv.h"
 
 /*
  * comphy_mux_check_config()

@@ -32,7 +32,31 @@
 #endif
 
 /* SOC specific definations */
+#if defined(CONFIG_ARMADA_8K)
+#define INTREG_BASE		0xf0000000
+#else
 #define INTREG_BASE		0xd0000000
+#endif
+
+#if defined(CONFIG_ARMADA_8K_PLUS)
+/*=============== A8K+ =================*/
+#define MVEBU_REGS_BASE_AP(ap)		(0xe8000000ULL - (ap) * 0x04000000)
+#define MVEBU_REGS_BASE_CP(ap, cp)	(0x8100000000ULL + \
+						(ap) * 0x1d00000000ULL + \
+						(cp) * 0x700000000ULL)
+#define MVEBU_CCU_MAX_WINS		(5)
+#define MVEBU_IO_WIN_MAX_WINS		(11)
+#define MVEBU_IO_WIN_GCR_OFFSET		(0xF0)
+#define MVEBU_GWIN_MAX_WINS		(16)
+#elif defined(CONFIG_ARMADA_8K)
+/*=============== A8K =================*/
+#define MVEBU_REGS_BASE_AP(ap)		(0xf0000000ULL)
+#define MVEBU_REGS_BASE_CP(ap, cp)	(0xf2000000ULL + (cp) * 0x02000000)
+#define MVEBU_CCU_MAX_WINS		(8)
+#define MVEBU_IO_WIN_MAX_WINS		(7)
+#define MVEBU_IO_WIN_GCR_OFFSET		(0x70)
+#endif
+
 #define INTREG_BASE_ADDR_REG	(INTREG_BASE + 0x20080)
 #if defined(CONFIG_SPL_BUILD) || defined(CONFIG_ARMADA_3700)
 /*
@@ -45,6 +69,8 @@
 #define SOC_REGS_PHY_BASE	0xd0000000
 #elif defined(CONFIG_ARMADA_8K)
 #define SOC_REGS_PHY_BASE	0xf0000000
+#elif defined(CONFIG_ARMADA_8K_PLUS)
+#define SOC_REGS_PHY_BASE	0xec000000
 #else
 #define SOC_REGS_PHY_BASE	0xf1000000
 #endif
@@ -163,4 +189,9 @@
 #define BOOT_FROM_SPI		0x3
 #endif
 
+#ifndef __ASSEMBLY__
+void soc_print_device_info(void);
+void soc_print_system_cache_info(void);
+int soc_get_ap_cp_num(void*, void*);
+#endif /* __ASSEMBLY__ */
 #endif /* _MVEBU_SOC_H */

@@ -5,13 +5,9 @@
  */
 
 #include <common.h>
-#include <dm.h>
-#include <i2c.h>
-#include <asm/io.h>
-#include <asm/arch/cpu.h>
-#include <asm/arch/soc.h>
+#include <power/regulator.h>
 #ifdef CONFIG_BOARD_CONFIG_EEPROM
-#include <mvebu_cfg_eeprom.h>
+#include <mvebu/cfg_eeprom.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -22,20 +18,28 @@ int __soc_early_init_f(void)
 }
 
 int soc_early_init_f(void)
-			__attribute__((weak, alias("__soc_early_init_f")));
+	__attribute__((weak, alias("__soc_early_init_f")));
 
 int board_early_init_f(void)
 {
-#ifdef CONFIG_MVEBU_SYS_INFO
-
 	soc_early_init_f();
-
+#ifdef CONFIG_MVEBU_SYS_INFO
 	/*
 	 * Call this function to transfer data from address 0x4000000
 	 * into a global struct, before code relocation.
 	 */
 	sys_info_init();
 #endif
+	return 0;
+}
+
+int board_early_init_r(void)
+{
+#ifdef CONFIG_DM_REGULATOR
+	/* Check if any existing regulator should be turned down */
+	regulators_enable_boot_off(false);
+#endif
+
 	return 0;
 }
 
@@ -57,6 +61,5 @@ int board_init(void)
 int board_late_init(void)
 {
 	/* Pre-configure the USB ports (overcurrent, VBus) */
-
 	return 0;
 }

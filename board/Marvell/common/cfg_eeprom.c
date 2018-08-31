@@ -17,7 +17,7 @@
  */
 
 #include <common.h>
-#include <mvebu_cfg_eeprom.h>
+#include <mvebu/cfg_eeprom.h>
 
 struct eeprom_struct board_config_val = CFG_DEFAULT_VALUE;
 struct config_types_info config_types_info[] = MV_EEPROM_CONFIG_INFO;
@@ -32,7 +32,13 @@ static char hw_info_param_list[][HW_INFO_MAX_NAME_LEN] = {
 	"ethaddr",
 	"eth1addr",
 	"eth2addr",
-	"eth3addr"
+	"eth3addr",
+	"eth4addr",
+	"eth5addr",
+	"eth6addr",
+	"eth7addr",
+	"eth8addr",
+	"eth9addr"
 };
 static int hw_info_param_num = (sizeof(hw_info_param_list) /
 				sizeof(hw_info_param_list[0]));

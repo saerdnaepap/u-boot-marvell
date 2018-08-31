@@ -48,7 +48,7 @@
 #include "armada-70x0-db.dtsi"
 
 / {
-	model = "Marvell Armada 7040 DB (D) board";
+	model = "Marvell Armada 7040 Development Board DB-88FA7040 setup(D)";
 	compatible = "marvell,armada7040-db", "marvell,armada7040",
 		     "marvell,armada-ap806-quad", "marvell,armada-ap806";
 
@@ -57,8 +57,13 @@
 	};
 
 	aliases {
-		i2c0 = &cpm_i2c0;
-		spi0 = &cpm_spi1;
+		i2c0 = &cp0_i2c0;
+		spi0 = &cp0_spi1;
+		fuse0 = &ap_hd_efuse0;
+		fuse1 = &ap_ld_efuse0;
+		fuse2 = &ap_ld_efuse1;
+		fuse3 = &cp0_ld_efuse0;
+		fuse4 = &cp0_ld_efuse1;
 	};
 
 	memory@00000000 {
@@ -66,7 +71,7 @@
 		reg = <0x0 0x0 0x0 0x80000000>;
 	};
 
-	cpm_sar {
+	cp0_sar {
 		boot_mode {
 			default = <0xe>;
 		};
@@ -87,22 +92,34 @@
 	status = "okay";
 };
 
-&cpm_pcie0 {
+&ap_hd_efuse0 {
 	status = "okay";
 };
 
-&cpm_pcie2 {
+&ap_ld_efuse0 {
 	status = "okay";
 };
 
-&cpm_i2c0 {
+&ap_ld_efuse1 {
+	status = "okay";
+};
+
+&cp0_pcie0 {
+	status = "okay";
+};
+
+&cp0_pcie2 {
+	status = "okay";
+};
+
+&cp0_i2c0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cpm_i2c0_pins>;
+	pinctrl-0 = <&cp0_i2c0_pins>;
 	status = "okay";
 	clock-frequency = <100000>;
 };
 
-&cpm_pinctl {
+&cp0_pinctl {
 		/* MPP Bus:
 		 * AUDIO   [0-5]
 		 * SS_PWDN [12]
@@ -128,23 +145,31 @@
 		     0xE 0xE 0>;
 };
 
-&cpm_nand {
+&cp0_nand {
 	status = "okay";
 };
 
-&cpm_sata0 {
+&cp0_ld_efuse0 {
 	status = "okay";
 };
 
-&cpm_scsi {
+&cp0_ld_efuse1 {
 	status = "okay";
 };
 
-&cpm_usb3_1 {
+&cp0_sata0 {
 	status = "okay";
 };
 
-&cpm_comphy {
+&cp0_scsi {
+	status = "okay";
+};
+
+&cp0_usb3_1 {
+	status = "okay";
+};
+
+&cp0_comphy {
 	phy0 {
 		phy-type = <COMPHY_TYPE_PEX0>;
 		phy-speed = <COMPHY_SPEED_5G>;
@@ -176,12 +201,12 @@
 	};
 };
 
-&cpm_utmi0 {
+&cp0_utmi0 {
 	utmi-port = <UTMI_PHY_TO_USB3_DEVICE0>;
 	status = "okay";
 };
 
-&cpm_utmi1 {
+&cp0_utmi1 {
 	status = "okay";
 };
 
@@ -192,14 +217,15 @@
 	non-removable;
 };
 
-&cpm_sdhci0 {
+&cp0_sdhci0 {
 	status = "okay";
 	bus-width = <4>;
 	no-1-8-v;
 	non-removable;
 };
 
-&cpm_mdio {
+&cp0_mdio {
+	status = "okay";
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 	};
@@ -208,17 +234,17 @@
 	};
 };
 
-&cpm_ethernet {
+&cp0_ethernet {
 	status = "okay";
 };
 
-&cpm_eth1 {
+&cp0_eth1 {
 	status = "okay";
 	phy = <&phy0>;
 	phy-mode = "sgmii";
 };
 
-&cpm_eth2 {
+&cp0_eth2 {
 	status = "okay";
 	phy = <&phy1>;
 	phy-mode = "rgmii-id";
