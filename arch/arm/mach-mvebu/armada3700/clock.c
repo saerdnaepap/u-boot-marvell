@@ -57,6 +57,13 @@
  #define NB_CLOCK_DIV_SEL2_WC_AHB_DIV_SEL_OFFSET	0
  #define NB_CLOCK_DIV_SEL2_WC_AHB_DIV_SEL_MASK		0x7
 
+/* north bridge SPI clock divider registers */
+#define NB_CLOCK_DIV_SEL1_REG	(NB_CLOCK_REGS_BASE + 0x8)
+ #define NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_OFFSET	27
+ #define NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_MASK		0x7
+ #define NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL2_OFFSET	24
+ #define NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL2_MASK		0x7
+
 /* north bridge clock source register */
 #define NB_CLOCK_SELECT_REG	(NB_CLOCK_REGS_BASE + 0x10)
  #define NB_CLOCK_SEL_DDR_PHY_CLK_SEL_OFFSET		10
@@ -296,4 +303,29 @@ void soc_print_clock_info(void)
 	printf("       NB AXI  %d [MHz]\n", soc_nb_axi_clk_get());
 	printf("       SB AXI  %d [MHz]\n", soc_sb_axi_clk_get());
 	printf("       DDR     %d [MHz]\n", soc_ddr_clk_get());
+}
+
+void soc_set_sqf_divider(void)
+{
+	u32 nb_div_sel1;
+	u8 prscl1;
+
+	printf("       Settings SPI Speed:\n");
+
+	nb_div_sel1 = readl(NB_CLOCK_DIV_SEL1_REG);
+	prscl1 = (nb_div_sel1 >> NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_OFFSET) & NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_MASK;
+
+	printf("       current sqf_prscl1    %u\n", prscl1);
+
+	/* Default for prscl1 seems to be 4. This leads to a min spi
+	 * clock of approx. 6.7 MHz which is too high for the spi RTC.
+	 * Set the divider to 5 to be able to achieve something
+	 * < 5.7 MHz for the RTC.
+	 */
+	prscl1++;
+
+	printf("       new sqf_prscl1        %u\n", prscl1);
+
+	nb_div_sel1 |= (prscl1 & NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_MASK) << NB_CLOCK_DIV_SEL1_SQF_CLK_PRSCL1_OFFSET;
+	writel(nb_div_sel1,NB_CLOCK_DIV_SEL1_REG);
 }

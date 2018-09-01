@@ -90,19 +90,8 @@ int mach_cpu_init(void) {
 	printf("Apply SD-Card Voltage\n");
 	u32 regval = readl(MVEBU_GPIO_NB_REG_BASE);
 	writel(regval | 0x4, MVEBU_GPIO_NB_REG_BASE);
-#ifdef CONFIG_TARGET_MGUARD3
-	/* inactive nETH_RESET */
-	regval = readl(MVEBU_GPIO_SB_PIN_OUTPUT);
-	writel(regval | 0x1, MVEBU_GPIO_SB_PIN_OUTPUT);
 
-	/* nETH_RESET = GPIO output */
-	regval = readl(MVEBU_GPIO_SB_OUTPUT_ENABLE);
-	writel(regval | 0x1, MVEBU_GPIO_SB_OUTPUT_ENABLE);
-
-	/* hold switch and phy in RESET */
-	regval = readl(MVEBU_GPIO_SB_PIN_OUTPUT);
-	writel(regval & 0xFFFE, MVEBU_GPIO_SB_PIN_OUTPUT);
-#endif
+	soc_set_sqf_divider();
 	return 0;
 }
 

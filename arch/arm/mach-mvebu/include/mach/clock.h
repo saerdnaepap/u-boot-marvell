@@ -30,5 +30,6 @@ u32 soc_ddr_clk_get(void);
 u32 soc_timer_clk_get(void);
 
 void soc_print_clock_info(void);
+void soc_set_sqf_divider(void);
 
 #endif /* _MVEBU_CLOCK_H_ */
