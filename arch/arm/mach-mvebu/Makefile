@@ -8,8 +8,9 @@ ifdef CONFIG_ARM64
 
 obj-$(CONFIG_ARMADA_3700) += armada3700/
 obj-$(CONFIG_ARMADA_8K) += armada8k/
+obj-$(CONFIG_ARMADA_8K_PLUS) += armada8kp/
 obj-y += arm64-common.o
-obj-y += sata.o
+obj-$(CONFIG_MVEBU_SCSI) += sata.o
 obj-$(CONFIG_MVEBU_SYS_INFO) += system_info.o
 
 else # CONFIG_ARM64
@@ -28,7 +29,6 @@ ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_ARMADA_375) += ../../../drivers/ddr/marvell/axp/xor.o
 obj-$(CONFIG_ARMADA_38X) += ../../../drivers/ddr/marvell/a38x/xor.o
 obj-$(CONFIG_ARMADA_XP) += ../../../drivers/ddr/marvell/axp/xor.o
-obj-$(CONFIG_MVEBU_EFUSE) += efuse.o
 endif # CONFIG_SPL_BUILD
 obj-y	+= gpio.o
 obj-y	+= mbus.o

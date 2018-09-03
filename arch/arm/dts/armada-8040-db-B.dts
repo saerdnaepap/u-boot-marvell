@@ -47,7 +47,7 @@
 #include "armada-80x0-db.dtsi"
 
 / {
-	model = "Marvell Armada 8040 DB (B) board";
+	model = "Marvell Armada 8040 Development Board DB-88F8040 setup(B)";
 	compatible = "marvell,armada8040-db", "marvell,armada8040",
 		     "marvell,armada-ap806-quad", "marvell,armada-ap806";
 
@@ -56,8 +56,15 @@
 	};
 
 	aliases {
-		i2c0 = &cpm_i2c0;
-		spi0 = &cps_spi1;
+		i2c0 = &cp0_i2c0;
+		spi0 = &cp1_spi1;
+		fuse0 = &ap_hd_efuse0;
+		fuse1 = &ap_ld_efuse0;
+		fuse2 = &ap_ld_efuse1;
+		fuse3 = &cp0_ld_efuse0;
+		fuse4 = &cp0_ld_efuse1;
+		fuse5 = &cp1_ld_efuse0;
+		fuse6 = &cp1_ld_efuse1;
 	};
 
 	memory@00000000 {
@@ -68,6 +75,18 @@
 
 /* Accessible over the mini-USB CON9 connector on the main board */
 &uart0 {
+	status = "okay";
+};
+
+&ap_hd_efuse0 {
+	status = "okay";
+};
+
+&ap_ld_efuse0 {
+	status = "okay";
+};
+
+&ap_ld_efuse1 {
 	status = "okay";
 };
 
@@ -88,7 +107,7 @@
 	status = "okay";
 };
 
-&cpm_pinctl {
+&cp0_pinctl {
 	/* MPP Bus:
 	 *	[0-31]	= 0xff: Keep default CP0_shared_pins
 	 *	[11]	CLKOUT_MPP_11 (out)
@@ -116,7 +135,15 @@
 		     0xe  0xe  0xe>;
 };
 
-&cpm_comphy {
+&cp0_ld_efuse0 {
+	status = "okay";
+};
+
+&cp0_ld_efuse1 {
+	status = "okay";
+};
+
+&cp0_comphy {
 	/* Serdes Configuration:
 	 *	Lane 0-3: PCIe0 (x4)
 	 *	Lane 4: USB3_HOST1
@@ -154,68 +181,69 @@
 };
 
 /* CON6 on CP0 expansion */
-&cpm_pcie0 {
+&cp0_pcie0 {
 	status = "okay";
 };
 
-&cpm_pcie1 {
+&cp0_pcie1 {
 	status = "disabled";
 };
 
 /* CON5 on CP0 expansion */
-&cpm_pcie2 {
+&cp0_pcie2 {
 	status = "okay";
 };
 
-&cpm_i2c0 {
+&cp0_i2c0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cpm_i2c0_pins>;
+	pinctrl-0 = <&cp0_i2c0_pins>;
 	status = "okay";
 	clock-frequency = <100000>;
 };
 
 /* CON9 on CP0 expansion */
-&cpm_usb3_0 {
+&cp0_usb3_0 {
 	status = "okay";
 };
 
 /* CON10 on CP0 expansion */
-&cpm_usb3_1 {
+&cp0_usb3_1 {
 	status = "okay";
 };
 
-&cpm_utmi0 {
+&cp0_utmi0 {
 	status = "okay";
 };
 
-&cpm_utmi1 {
+&cp0_utmi1 {
 	status = "okay";
 };
 
-&cpm_sdhci0 {
+&cp0_sdhci0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cpm_sdhci_pins>;
+	pinctrl-0 = <&cp0_sdhci_pins>;
 	bus-width = <4>;
 	status = "okay";
 };
 
-&cpm_mdio {
+&cp0_mdio {
+	status = "okay";
 	phy1: ethernet-phy@1 {
 		reg = <1>;
 	};
 };
 
-&cpm_ethernet {
+&cp0_ethernet {
 	status = "okay";
 };
 
-&cpm_eth2 {
+&cp0_eth2 {
 	status = "okay";
 	phy = <&phy1>;
 	phy-mode = "rgmii-id";
 };
 
-&cps_pinctl {
+&cp1_pinctl {
 	/* MPP Bus:
 	 *	[0-11]	RGMII0
 	 *	[13-16]	SPI1
@@ -234,7 +262,15 @@
 		     0xff 0xff 0xff>;
 };
 
-&cps_comphy {
+&cp1_ld_efuse0 {
+	status = "okay";
+};
+
+&cp1_ld_efuse1 {
+	status = "okay";
+};
+
+&cp1_comphy {
 	/* Serdes Configuration:
 	 *	Lane 0: PCIe0 (x1)
 	 *	Lane 1: USB3_HOST0
@@ -251,8 +287,8 @@
 		phy-speed = <COMPHY_SPEED_5G>;
 	};
 	phy2 {
-		phy-type = <COMPHY_TYPE_SGMII0>;
-		phy-speed = <COMPHY_SPEED_1_25G>;
+		phy-type = <COMPHY_TYPE_SFI>;
+		phy-speed = <COMPHY_SPEED_10_3125G>;
 	};
 	phy3 {
 		phy-type = <COMPHY_TYPE_SATA1>;
@@ -266,30 +302,33 @@
 };
 
 /* CON6 on CP1 expansion */
-&cps_pcie0 {
+&cp1_pcie0 {
 	status = "okay";
 };
 
-&cps_pcie1 {
+&cp1_pcie1 {
 	status = "okay";
 };
 
 /* CON5 on CP1 expansion */
-&cps_pcie2 {
+&cp1_pcie2 {
 	status = "okay";
 };
 
-&cps_spi1 {
+&cp1_spi1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&cps_spi1_pins>;
+	pinctrl-0 = <&cp1_spi1_pins>;
+	reg = <0x700680 0x50>,		/* control */
+	      <0x2000000 0x1000000>,	/* CS0 */
+	      <0 0xffffffff>;		/* CS1 */
 	status = "okay";
 
 	spi-flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "jedec,spi-nor";
+		compatible = "jedec,spi-nor", "spi-flash";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <108000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -309,39 +348,40 @@
 };
 
 /* CON4 on CP1 expansion */
-&cps_sata0 {
+&cp1_sata0 {
 	status = "okay";
 };
 
-&cps_scsi {
+&cp1_scsi {
 	status = "okay";
 };
 
 /* CON9 on CP1 expansion */
-&cps_usb3_0 {
+&cp1_usb3_0 {
 	status = "okay";
 };
 
-&cps_utmi0 {
+&cp1_utmi0 {
 	status = "okay";
 };
 
-&cps_mdio {
+&cp1_mdio {
+	status = "okay";
         phy0: ethernet-phy@0 {
                 reg = <0>;
         };
 };
 
-&cps_ethernet {
+&cp1_ethernet {
 	status = "okay";
 };
 
-&cps_eth0 {
+&cp1_eth0 {
         status = "okay";
-	phy-mode = "sgmii"; /* lane-2 */
+	phy-mode = "sfi"; /* lane-2 */
 };
 
-&cps_eth1 {
+&cp1_eth1 {
         status = "okay";
         phy = <&phy0>;
         phy-mode = "rgmii-id";

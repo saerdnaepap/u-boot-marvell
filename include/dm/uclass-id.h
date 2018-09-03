@@ -45,6 +45,7 @@ enum uclass_id {
 	UCLASS_LPC,		/* x86 'low pin count' interface */
 	UCLASS_MAILBOX,		/* Mailbox controller */
 	UCLASS_MASS_STORAGE,	/* Mass storage device */
+	UCLASS_MDIO,		/* MDIO device */
 	UCLASS_MISC,		/* Miscellaneous device */
 	UCLASS_MMC,		/* SD / MMC card or chip */
 	UCLASS_MOD_EXP,		/* RSA Mod Exp device */
@@ -65,6 +66,7 @@ enum uclass_id {
 	UCLASS_REGULATOR,	/* Regulator device */
 	UCLASS_REMOTEPROC,	/* Remote Processor device */
 	UCLASS_RESET,		/* Reset controller device */
+	UCLASS_SAR,		/* Reset Sample Configuration */
 	UCLASS_RTC,		/* Real time clock device */
 	UCLASS_SCSI,		/* SCSI device */
 	UCLASS_SERIAL,		/* Serial UART */

@@ -1,6 +1,13 @@
 menu "MVEBU commands"
 depends on ARCH_MVEBU
 
+config CMD_MVEBU_SAR
+	bool "sar"
+	depends on MVEBU_SAR
+	default n
+	help
+	  sar - Modify SOC's sample at reset (SAR) values
+
 config CMD_MVEBU_BUBT
 	bool "bubt"
 	default n
@@ -8,6 +15,14 @@ config CMD_MVEBU_BUBT
 	  bubt - Burn a u-boot image to flash
 	  For details about bubt command please see the documentation
 	  in doc/mvebu/cmd/bubt.txt
+
+config MVEBU_UBOOT_DFLT_NAME
+	string "Default image name for bubt command"
+	default "flash-image.bin"
+	depends on CMD_MVEBU_BUBT
+	help
+	  This option should contain a default file name to be used with
+	  MVEBU "bubt" command if the source file name is omitted
 
 config CMD_MVEBU_HW_INFO
 	bool "hw_info"
@@ -26,6 +41,23 @@ config CMD_MVEBU_TSEN
 	help
 	  tsen - Display the SoC temperature
 	  as read from the on chip thermal sensor
+
+config CMD_MVEBU_PHY_FW_DOWNLOAD
+	bool "phy_fw_down"
+	depends on MVMDIO
+	default n
+	help
+	  phy_fw_down - This command download
+	  PHY firmware header to the PHY flash.
+	  This command is used for Marvell PHYs
+	  88X3220/88X3310
+
+config CMD_MVEBU_MCI_INDIRECT_ACCESS
+	bool "mci"
+	depends on MVEBU_MCI_INDIRECT_ACCESS
+	default y
+	help
+	  mci - Indirect access to mci registers
 
 choice
 	prompt "Flash for image"
@@ -58,19 +90,20 @@ config MVEBU_MMC_BOOT
 	  For details about bubt command please see the documentation
 	  in doc/mvebu/cmd/bubt.txt
 
-endchoice
-
-config MVEBU_UBOOT_DFLT_NAME
-	string "Default image name for bubt command"
-	default "flash-image.bin"
+config MVEBU_SPINAND_BOOT
+	bool "SPINAND flash boot"
+	depends on SPI_NAND
 	help
-	  This option should contain a default file name to be used with
-	  MVEBU "bubt" command if the source file name is omitted
+	  Enable boot from SPINAND flash.
+	  Allow usage of SPINAND flash as a target for "bubt" command
+	  For details about bubt command please see help information by
+	  running "help bubt" command.
+
+endchoice
 
 config CMD_MVEBU_EFUSE
 	bool "efuse"
-	depends on TARGET_MVEBU_ARMADA_37XX
-	select MVEBU_EFUSE_SUPPORT
+	depends on MVEBU_EFUSE_SUPPORT
 	default n
 	help
 	  eFuse - allow access to SoC eFuse entries
@@ -87,5 +120,27 @@ config CMD_MVEBU_MG_BOOT
 	  reset. The MG's CM3 doesn't have hardware UART but after enabling this
 	  option UART emulation can be used and console output can be redirected
 	  to MG's CM3
+
+config CMD_MVEBU_RX_TRAINING
+	bool "rx_training"
+	depends on TARGET_MVEBU_ARMADA_8K
+	default n
+	help
+	  Perform RX training sequence
+
+config CMD_MVEBU_MAP
+	bool "map"
+	depends on TARGET_MVEBU_ARMADA_8K || TARGET_MVEBU_ARMADA_8K_PLUS
+	default y
+	help
+	  Dump address translation tables
+
+config CMD_MVEBU_AVS
+	bool "avs"
+	depends on TARGET_MVEBU_ARMADA_8K || TARGET_MVEBU_ARMADA_8K_PLUS
+	default y
+	help
+	  Set/Get the Adaptive Voltage Scaling (AVS) value
+
 
 endmenu

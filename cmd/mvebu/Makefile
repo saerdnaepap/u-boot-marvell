@@ -10,3 +10,7 @@ obj-$(CONFIG_CMD_MVEBU_HW_INFO) += hw_info.o
 obj-$(CONFIG_CMD_MVEBU_EFUSE) += efuse.o
 obj-$(CONFIG_CMD_MVEBU_TSEN) += thermal.o
 obj-$(CONFIG_CMD_MVEBU_MG_BOOT) += cmd_mg.o
+obj-$(CONFIG_CMD_MVEBU_RX_TRAINING) += rx_training.o
+obj-$(CONFIG_CMD_MVEBU_MCI_INDIRECT_ACCESS) += mci.o
+obj-$(CONFIG_CMD_MVEBU_MAP) += map.o
+obj-$(CONFIG_CMD_MVEBU_AVS) += avs.o

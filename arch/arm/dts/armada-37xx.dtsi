@@ -268,7 +268,7 @@
 
 				mmc_pins: mmc-pins {
 					groups = "emmc_nb";
-					function = "mmc";
+					function = "emmc";
 				};
 			};
 
@@ -278,7 +278,7 @@
 				reg = <0x18800 0x100>, <0x18C00 0x20>;
 				gpiosb: gpiosb {
 					#gpio-cells = <2>;
-					gpio-ranges = <&pinctrl_sb 0 0 29>;
+					gpio-ranges = <&pinctrl_sb 0 0 30>;
 					gpio-controller;
 					interrupts =
 					<GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>,
@@ -293,6 +293,11 @@
 					function = "mii";
 				};
 
+				smi_pins: smi-pins {
+					groups = "smi";
+					function = "smi";
+				};
+
 				sdio_pins: sdio-pins {
 					groups = "sdio_sb";
 					function = "sdio";
@@ -300,7 +305,7 @@
 
 				pcie_pins: pcie-pins {
 					groups = "pcie1";
-					function = "pcie";
+					function = "gpio";
 				};
 			};
 

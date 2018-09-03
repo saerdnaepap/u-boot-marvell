@@ -6,15 +6,6 @@
 
 #include <common.h>
 #include <dm.h>
-#include <fdtdec.h>
-#include <libfdt.h>
-#include <pci.h>
-#include <asm/io.h>
-#include <asm/system.h>
-#include <asm/arch/cpu.h>
-#include <asm/arch/soc.h>
-#include <asm/armv8/mmu.h>
-#include <power/regulator.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -142,10 +133,6 @@ int arch_early_init_r(void)
 	int ret;
 	int i;
 
-	/* Check if any existing regulator should be turned down */
-	if (!of_machine_is_compatible("marvell,armada3710"))
-		regulators_enable_boot_off(false);
-
 	/*
 	 * Loop over all MISC uclass drivers to call the comphy code
 	 * and init all CP110 devices enabled in the DT
@@ -154,6 +141,16 @@ int arch_early_init_r(void)
 	while (1) {
 		/* Call the comphy code via the MISC uclass driver */
 		ret = uclass_get_device(UCLASS_MISC, i++, &dev);
+
+		/* We're done, once no further CP110 device is found */
+		if (ret)
+			break;
+	}
+
+	i = 0;
+	while (1) {
+		/* Call the pinctrl code via the PINCTRL uclass driver */
+		ret = uclass_get_device(UCLASS_PINCTRL, i++, &dev);
 
 		/* We're done, once no further CP110 device is found */
 		if (ret)
